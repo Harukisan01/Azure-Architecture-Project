@@ -1,11 +1,7 @@
 ![Diagramma Architettura Azure](https://raw.githubusercontent.com/Harukisan01/Azure-Architecture-Project/main/spk.png)
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FHarukisan01%2FAzure-Architecture-Project%2Fmain%2FArm.json)
-code
-Markdown
-download
-content_copy
-expand_less
+
 # 🏗️ Guida Operativa Definitiva: Architettura Azure Hub-and-Spoke (Enterprise Grade)
 
 Questa guida fornisce i passaggi esatti per costruire l'infrastruttura di rete, calcolo e sicurezza definita nel diagramma architetturale del progetto `Azure-Architecture-Project`, partendo da zero sul portale di Azure (https://portal.azure.com).
