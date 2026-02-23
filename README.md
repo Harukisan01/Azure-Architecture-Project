@@ -1,8 +1,4 @@
-Ecco la Guida Definitiva al 100%, formattata in Markdown, corretta in ogni singolo dettaglio tecnico estratto dal tuo diagramma (inclusi gli indirizzi IP 10.1.x.x del backend, i tempi esatti delle health probe, le Managed Identities e le Private Endpoint network policies).
 
-Questa è la versione "da manuale" che il tuo collega può seguire alla lettera nel portale Azure, progettata per replicare fedelmente il tuo repository GitHub.
-
-Puoi copiare tutto il blocco sottostante e salvarlo come Guida-Infrastruttura-Azure-Completa.md.
 
 code
 Markdown
