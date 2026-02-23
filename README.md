@@ -1,4 +1,4 @@
-
+![Diagramma Architettura Azure](https://raw.githubusercontent.com/Harukisan01/Azure-Architecture-Project/main/spk.png)
 
 code
 Markdown
