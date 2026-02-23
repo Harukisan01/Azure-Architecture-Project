@@ -142,6 +142,161 @@ Questa guida fornisce i passaggi esatti per costruire l'infrastruttura di rete, 
 3. *Public IP*: Create new -> `pip-bastion`.
 4. Clicca **Review + create**, poi **Create**.
 
+# Azure Architecture -- Checklist di Implementazione
+
+## 1. Preparazione Ambiente
+
+-   [ ] Creare Resource Group
+-   [ ] Definire naming convention standard
+-   [ ] Definire region di deployment
+-   [ ] Configurare subscription e RBAC
+-   [ ] Abilitare Microsoft Defender for Cloud (opzionale)
+
+------------------------------------------------------------------------
+
+## 2. Networking
+
+### 2.1 Virtual Network
+
+-   [ ] Creare Virtual Network (VNet)
+-   [ ] Creare subnet:
+    -   [ ] Subnet Application Gateway
+    -   [ ] Subnet VMSS
+    -   [ ] Subnet Private Endpoints
+-   [ ] Configurare NSG per ogni subnet
+-   [ ] Configurare UDR se necessario
+
+### 2.2 DNS
+
+-   [ ] Creare Private DNS Zone (privatelink.blob.core.windows.net)
+-   [ ] Collegare la Private DNS Zone alla VNet
+-   [ ] Verificare risoluzione DNS interna
+
+------------------------------------------------------------------------
+
+## 3. Accesso Sicuro
+
+### 3.1 Azure Bastion
+
+-   [ ] Creare subnet AzureBastionSubnet
+-   [ ] Deploy Azure Bastion
+-   [ ] Test accesso RDP/SSH alle VM senza IP pubblico
+
+------------------------------------------------------------------------
+
+## 4. Storage Layer
+
+### 4.1 Storage Account
+
+-   [ ] Creare Storage Account
+-   [ ] Disabilitare Public Network Access
+-   [ ] Impostare Access Tier (Hot/Cool)
+-   [ ] Abilitare diagnosi e logging
+
+### 4.2 Private Endpoint
+
+-   [ ] Creare Private Endpoint per Blob
+-   [ ] Associare Private DNS Zone
+-   [ ] Test connettività privata
+
+------------------------------------------------------------------------
+
+## 5. Identity & Access
+
+### 5.1 Managed Identity
+
+-   [ ] Abilitare Managed Identity su:
+    -   [ ] App Service
+    -   [ ] VM Scale Set
+-   [ ] Assegnare ruolo RBAC (es. Storage Blob Data Reader/Contributor)
+-   [ ] Test autenticazione senza secret
+
+------------------------------------------------------------------------
+
+## 6. Compute Layer
+
+### 6.1 App Service
+
+-   [ ] Creare App Service Plan (Linux)
+-   [ ] Creare Web App
+-   [ ] Abilitare VNet Integration
+-   [ ] Configurare variabili ambiente
+-   [ ] Deploy applicazione
+
+### 6.2 VM Scale Set
+
+-   [ ] Creare VM Scale Set (min 2 istanze)
+-   [ ] Configurare autoscale
+-   [ ] Installare runtime applicativo
+-   [ ] Abilitare diagnostica
+
+------------------------------------------------------------------------
+
+## 7. Load Balancing
+
+### 7.1 Internal Load Balancer
+
+-   [ ] Creare Internal Load Balancer
+-   [ ] Configurare backend pool (VMSS)
+-   [ ] Creare regola TCP (80 → 80)
+-   [ ] Configurare Health Probe (HTTP)
+
+### 7.2 Application Gateway (WAF v2)
+
+-   [ ] Creare Public IP
+-   [ ] Deploy Application Gateway (WAF v2)
+-   [ ] Configurare Listener (HTTP/HTTPS)
+-   [ ] Installare certificato TLS
+-   [ ] Configurare backend pool
+-   [ ] Configurare health probe
+-   [ ] Abilitare WAF in modalità Prevention
+
+------------------------------------------------------------------------
+
+## 8. Monitoring
+
+### 8.1 Log Analytics
+
+-   [ ] Creare Log Analytics Workspace
+-   [ ] Abilitare Diagnostic Settings per:
+    -   [ ] Application Gateway
+    -   [ ] VMSS
+    -   [ ] App Service
+    -   [ ] Storage Account
+-   [ ] Creare alert su metriche critiche
+
+------------------------------------------------------------------------
+
+## 9. Backup
+
+### 9.1 Recovery Services Vault
+
+-   [ ] Creare Recovery Services Vault
+-   [ ] Configurare Backup Policy (giornaliera)
+-   [ ] Abilitare backup VM
+-   [ ] Test ripristino
+
+------------------------------------------------------------------------
+
+## 10. Validazione Finale
+
+-   [ ] Test accesso pubblico via Application Gateway
+-   [ ] Verificare assenza IP pubblici sulle VM
+-   [ ] Verificare accesso Storage solo via Private Endpoint
+-   [ ] Test autoscale VMSS
+-   [ ] Verificare log e monitoraggio
+-   [ ] Eseguire security review finale
+
+------------------------------------------------------------------------
+
+## 11. Documentazione
+
+-   [ ] Aggiornare diagramma architetturale
+-   [ ] Documentare configurazioni chiave
+-   [ ] Salvare export ARM/Bicep/Terraform
+-   [ ] Preparare handover document
+
+
 ---
 🎉 **INFRASTRUTTURA COMPLETATA!**
 Questa configurazione rispecchia il 100% dei requisiti architetturali, inclusi CIDR block specifici, RBAC roles, regole di probe custom e policy disabilitate sui Private Endpoint.
