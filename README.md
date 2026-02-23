@@ -297,6 +297,4 @@ Questa guida fornisce i passaggi esatti per costruire l'infrastruttura di rete, 
 -   [ ] Preparare handover document
 
 
----
-🎉 **INFRASTRUTTURA COMPLETATA!**
-Questa configurazione rispecchia il 100% dei requisiti architetturali, inclusi CIDR block specifici, RBAC roles, regole di probe custom e policy disabilitate sui Private Endpoint.
+
