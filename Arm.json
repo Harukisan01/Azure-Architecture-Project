@@ -422,7 +422,7 @@
             "name": "[variables('vmssName')]",
             "location": "[parameters('location')]",
             "sku": {
-                "name": "Standard_DS2_v2",
+                "name": "Standard_B2s",
                 "tier": "Standard",
                 "capacity": 2
             },
@@ -506,12 +506,12 @@
             "apiVersion": "2022-07-01",
             "name": "[variables('agwName')]",
             "location": "[parameters('location')]",
-            "sku": {
-                "name": "WAF_v2",
-                "tier": "WAF_v2",
-                "capacity": 2
-            },
             "properties": {
+                "sku": {
+                    "name": "WAF_v2",
+                    "tier": "WAF_v2",
+                    "capacity": 2
+                },
                 "gatewayIPConfigurations": [
                     {
                         "name": "appGatewayIpConfig",
@@ -572,37 +572,47 @@
                         }
                     }
                 ],
-                "requestRoutingRules": [
+                "urlPathMaps": [
                     {
-                        "name": "AppServiceRule",
+                        "name": "routingPathMap",
                         "properties": {
-                            "ruleType": "Basic",
-                            "httpListener": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/httpListeners/httpListener')]"
-                            },
-                            "backendAddressPool": {
+                            "defaultBackendAddressPool": {
                                 "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/backendAddressPools/appServicePool')]"
                             },
-                            "backendHttpSettings": {
+                            "defaultBackendHttpSettings": {
                                 "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/backendHttpSettingsCollection/httpSetting')]"
                             },
-                            "priority": 100
+                            "pathRules": [
+                                {
+                                    "name": "vmssRule",
+                                    "properties": {
+                                        "paths": [
+                                            "/vmss/*"
+                                        ],
+                                        "backendAddressPool": {
+                                            "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/backendAddressPools/vmssPool')]"
+                                        },
+                                        "backendHttpSettings": {
+                                            "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/backendHttpSettingsCollection/httpSetting')]"
+                                        }
+                                    }
+                                }
+                            ]
                         }
-                    },
+                    }
+                ],
+                "requestRoutingRules": [
                     {
-                        "name": "VMSSRule",
+                        "name": "PathBasedRoutingRule",
                         "properties": {
-                            "ruleType": "Basic",
+                            "ruleType": "PathBasedRouting",
+                            "priority": 100,
                             "httpListener": {
                                 "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/httpListeners/httpListener')]"
                             },
-                            "backendAddressPool": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/backendAddressPools/vmssPool')]"
-                            },
-                            "backendHttpSettings": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/backendHttpSettingsCollection/httpSetting')]"
-                            },
-                            "priority": 200
+                            "urlPathMap": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('agwName')), '/urlPathMaps/routingPathMap')]"
+                            }
                         }
                     }
                 ],
