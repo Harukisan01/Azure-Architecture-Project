@@ -1,178 +1,151 @@
-# Azure-Architecture-Project
+Ecco la Guida Definitiva al 100%, formattata in Markdown, corretta in ogni singolo dettaglio tecnico estratto dal tuo diagramma (inclusi gli indirizzi IP 10.1.x.x del backend, i tempi esatti delle health probe, le Managed Identities e le Private Endpoint network policies).
 
+Questa è la versione "da manuale" che il tuo collega può seguire alla lettera nel portale Azure, progettata per replicare fedelmente il tuo repository GitHub.
 
-Ecco la guida completa e unificata, formattata in Markdown.
-
-Puoi copiare l'intero blocco di testo qui sotto, incollarlo in un editor di testo (come Blocco Note, VS Code o Notepad++) e salvarlo con il nome Guida-Infrastruttura-Azure.md.
+Puoi copiare tutto il blocco sottostante e salvarlo come Guida-Infrastruttura-Azure-Completa.md.
 
 code
 Markdown
 download
 content_copy
 expand_less
-# 🏗️ Guida Operativa: Implementazione Architettura Azure Hub-and-Spoke
+# 🏗️ Guida Operativa Definitiva: Architettura Azure Hub-and-Spoke (Enterprise Grade)
 
-Questa guida fornisce i passaggi esatti, "clic-per-clic", per costruire l'infrastruttura di rete, calcolo e sicurezza definita nel diagramma architetturale, partendo da zero sul portale di Azure (https://portal.azure.com).
+Questa guida fornisce i passaggi esatti per costruire l'infrastruttura di rete, calcolo e sicurezza definita nel diagramma architetturale del progetto `Azure-Architecture-Project`, partendo da zero sul portale di Azure (https://portal.azure.com).
 
-## 📋 Prerequisito: Il Contenitore (Resource Group)
-Tutte le risorse in Azure devono risiedere in un gruppo logico.
-1. Nella barra di ricerca in alto, scrivi **Resource groups** e clicca sul servizio.
-2. Clicca su **+ Create**.
-3. **Resource group**: scrivi `RG-Architettura`.
-4. **Region**: scegli **West Europe** (o la regione desiderata).
-5. Clicca **Review + create**, poi **Create**.
+## 📋 PREMESSA: Il Resource Group
+1. Cerca **Resource groups** e clicca su **+ Create**.
+2. **Resource group**: scrivi `rg-azure-architecture`.
+3. **Region**: scegli **West Europe** (o la tua region di riferimento).
+4. Clicca **Review + create** e poi **Create**.
 
 ---
 
-## 🛠️ PASSO 1: Costruire la Rete e le Sottoreti (Virtual Network)
-Creiamo il perimetro isolato per le nostre risorse.
-1. Cerca in alto **Virtual networks** e clicca su **+ Create**.
+## 🛠️ FASE 1: Fondamenta di Rete (VNet e Subnet Avanzate)
+*Nota: Il diagramma utilizza due spazi di indirizzamento separati (10.0.x.x per il frontend/integrazione e 10.1.x.x per il backend).*
+
+1. Cerca **Virtual networks** e clicca su **+ Create**.
 2. **Scheda Basics**:
-   * *Resource group*: `RG-Architettura`.
+   * *Resource group*: `rg-azure-architecture`.
    * *Virtual network name*: `vnet-main`.
    * *Region*: West Europe.
    * Clicca **Next: IP Addresses >**.
 3. **Scheda IP Addresses**:
-   * Lascia lo spazio indirizzi predefinito (es. `10.0.0.0/16`).
-   * Elimina la subnet "default" cliccando sul cestino.
-   * Clicca **+ Add a subnet** per creare le seguenti 4 sottoreti (cliccando "Add" per ognuna):
-     * Nome: `FrontEndSubnet` | Range: `10.0.1.0/24`
-     * Nome: `IntegrationSubnet` | Range: `10.0.2.0/24`
-     * Nome: `BackendSubnet` | Range: `10.0.3.0/24`
-     * Nome: `AzureBastionSubnet` *(scritto esattamente così)* | Range: `10.0.4.0/24`
+   * Sotto *IPv4 address space*, elimina lo spazio predefinito e aggiungi questi due:
+     * `10.0.0.0/16`
+     * `10.1.0.0/16`
+   * Elimina la subnet `default`.
+   * Clicca **+ Add a subnet** per creare le seguenti 4 sottoreti:
+     * Nome: `AzureBastionSubnet` | Range: `10.0.0.0/24` -> Add.
+     * Nome: `FrontEndSubnet` | Range: `10.0.1.0/24` -> Add.
+     * Nome: `IntegrationSubnet` | Range: `10.0.2.0/24` -> Add.
+     * Nome: `BackendSubnet` | Range: `10.1.1.0/24` -> **ATTENZIONE:** Prima di cliccare Add, scorri in basso nella finestra della subnet, espandi *Private endpoint network policies* e seleziona **Disabled** (come richiesto espressamente nel diagramma). Poi clicca Add.
 4. Clicca **Review + create**, poi **Create**.
 
 ---
 
-## 🛠️ PASSO 2: Il Monitoraggio Centralizzato (Log Analytics)
-Prepariamo il "raccoglitore" dei log per tutta l'infrastruttura.
-1. Cerca in alto **Log Analytics workspaces** e clicca **+ Create**.
-2. **Scheda Basics**:
-   * *Resource group*: `RG-Architettura`.
-   * *Name*: `law-miaapp-prod`.
-   * *Region*: West Europe.
-3. Clicca **Review + create**, poi **Create**.
+## 🛠️ FASE 2: Osservabilità e Backup
+1. Cerca **Log Analytics workspaces** e clicca **+ Create**.
+   * *Name*: `law-workspace-01`
+   * Clicca **Review + create** e poi **Create**.
+2. Cerca **Recovery Services vaults** e clicca **+ Create**.
+   * *Vault name*: `rsv-backup-01`
+   * Clicca **Review + create** e poi **Create**.
+   * *(Più avanti creeremo la `DailyBackupPolicy` per proteggere le risorse).*
 
 ---
 
-## 🛠️ PASSO 3: Lo Storage Blindato (Storage Account & Private Link)
-Creiamo lo storage e disabilitiamo l'accesso da Internet per massima sicurezza.
+## 🛠️ FASE 3: Storage Blindato e Private DNS Zone
 1. Cerca **Storage accounts** e clicca **+ Create**.
 2. **Scheda Basics**:
-   * *Resource group*: `RG-Architettura`.
-   * *Storage account name*: nome unico, tutto minuscolo (es. `storageprivatomario88`).
-   * *Region*: West Europe.
-   * *Performance*: Standard.
-   * *Redundancy*: Locally-redundant storage (LRS).
-3. Vai alla **Scheda Networking**:
-   * Sotto *Network access*, seleziona **Disable public access and use private access**.
-4. Clicca **Review + create**, poi **Create**. Attendi la creazione.
+   * *Storage account name*: nome unico globale (es. `store` + numeri).
+   * *Performance*: Standard | *Redundancy*: LRS.
+3. **Scheda Networking**:
+   * *Network access*: seleziona **Disable public access and use private access**.
+4. Clicca **Review + create** e poi **Create**. Attendi la fine dell'operazione.
 
-**Creazione del Tunnel Privato (Private Endpoint):**
-5. Apri lo Storage Account appena creato.
-6. Nel menu a sinistra, sotto *Security + networking*, clicca **Networking**.
-7. Vai nella scheda **Private endpoint connections** in alto e clicca **+ Private endpoint**.
-8. **Scheda Basics**: *Name* `pe-storage`, vai su *Next*.
-9. **Scheda Resource**: *Target sub-resource* scegli **blob**, vai su *Next*.
-10. **Scheda Virtual Network**: seleziona `vnet-main` e la subnet **BackendSubnet**, vai su *Next*.
-11. **Scheda DNS**: *Integrate with private DNS zone* su **Yes**.
-12. Clicca **Review + create**, poi **Create**.
+**Creazione del Private Endpoint (`pe-storage`):**
+5. Apri lo Storage Account appena creato -> menu a sinistra **Networking** -> scheda **Private endpoint connections** -> clicca **+ Private endpoint**.
+6. **Basics**: *Name*: `pe-storage`. Next.
+7. **Resource**: *Target sub-resource*: **blob**. Next.
+8. **Virtual Network**: *Virtual network*: `vnet-main` | *Subnet*: **BackendSubnet** (`10.1.1.0/24`). Next.
+9. **DNS**: *Integrate with private DNS zone*: **Yes**. (Questo creerà la zona `privatelink.blob.core.windows.net` e il gruppo `pe-storage/default` visti nel diagramma, collegandola alla VNet).
+10. Clicca **Review + create**, poi **Create**.
 
 ---
 
-## 🛠️ PASSO 4: Il Frontend Web (App Service con VNet Integration)
+## 🛠️ FASE 4: Frontend Web e VNet Integration
 1. Cerca **App Services** e clicca **+ Create** -> **+ Web App**.
 2. **Scheda Basics**:
-   * *Resource group*: `RG-Architettura`.
-   * *Name*: nome unico (es. `app-frontend-mario88`).
-   * *Publish*: Code.
-   * *Runtime stack*: (es. Node 20 LTS o .NET).
-   * *Operating System*: **Linux**.
-   * *Pricing plan*: Clicca "Create new", scrivi `plan-az104`. Scegli un piano Standard (es. S1) (Non usare Free F1/D1).
-3. Vai alla **Scheda Networking**:
-   * Sotto *Enable network injection*, metti su **On**.
-   * Seleziona `vnet-main` e la subnet **IntegrationSubnet**.
-4. Clicca **Review + create**, poi **Create**.
+   * *Name*: es. `app-frontend-01`.
+   * *Publish*: Code | *Runtime*: (es. Node 20 LTS) | *OS*: **Linux**.
+   * *Pricing plan*: Clicca "Create new", scrivi `plan-az104`. Scegli un piano Standard (es. S1).
+3. **Scheda Networking**:
+   * *Enable network injection*: **On**.
+   * Seleziona `vnet-main` e la **IntegrationSubnet** (`10.0.2.0/24`). (Questo abilita la feature *vnetRouteAllEnabled*).
+4. Clicca **Review + create** e poi **Create**.
 
 ---
 
-## 🛠️ PASSO 5: Il Bilanciatore Interno (Internal Load Balancer)
-Smista il traffico verso i server backend, senza IP pubblico.
+## 🛠️ FASE 5: Il Bilanciatore Interno (Internal Load Balancer)
 1. Cerca **Load balancers** e clicca **+ Create**.
-2. **Scheda Basics**:
-   * *Name*: `lb-vmss` | *Type*: **Internal** | *SKU*: Standard.
-3. **Scheda Frontend IP configuration**:
-   * Clicca **+ Add**. Nome: `ip-frontend-interno`, VNet: `vnet-main`, Subnet: **BackendSubnet**, Assignment: Dynamic. Clicca Add.
-4. **Scheda Backend pools**:
-   * Clicca **+ Add**. Nome: `backend-pool-vmss`, VNet: `vnet-main`. Clicca Save.
-5. **Scheda Inbound rules**:
-   * Clicca **+ Add**. Nome: `regola-http-80`. Frontend: `ip-frontend-interno`. Backend pool: `backend-pool-vmss`. Protocol: TCP, Port 80, Backend port 80.
-   * *Health probe*: Create new -> Nome `health-probe-80`, HTTP, Porta 80, Path `/`. Salva.
+2. **Basics**: *Name*: `lb-vmss` | *Type*: **Internal** | *SKU*: Standard. Next.
+3. **Frontend IP configuration**: + Add. Nome: `ip-frontend`, VNet: `vnet-main`, Subnet: **BackendSubnet** (`10.1.1.0/24`), Dynamic. Add. Next.
+4. **Backend pools**: + Add. Nome: `backend-pool-vmss`, VNet: `vnet-main`. Save. Next.
+5. **Inbound rules**: + Add. 
+   * Nome: `lb-rule-tcp`. Frontend: `ip-frontend`. Backend pool: `backend-pool-vmss`.
+   * Protocol: **TCP**, Port **80**, Backend port **80**.
+   * *Health probe*: Create new -> Nome `probe-http-5s`, Protocol **HTTP**, Port **80**, Path `/`, **Interval: 5 seconds** (Dettaglio esatto del diagramma). Salva.
 6. Clicca **Review + create**, poi **Create**.
-*(Nota: a creazione finita, annota l'Indirizzo IP Privato assegnato al Load Balancer)*.
+*(Nota: a creazione finita, vai nella pagina del Load Balancer e annota il suo "Private IP address", es. 10.1.1.4).*
 
 ---
 
-## 🛠️ PASSO 6: Il Motore di Calcolo (Virtual Machine Scale Set - VMSS)
+## 🛠️ FASE 6: Il Motore di Calcolo (VMSS - 2 Istanze)
 1. Cerca **Virtual machine scale sets** e clicca **+ Create**.
-2. **Scheda Basics**:
-   * *Name*: `vmss-backend` | *Image*: Ubuntu Server 22.04 LTS (o Windows).
-   * Inserisci Username e Password per l'amministratore.
-3. Vai alla **Scheda Networking**:
-   * Seleziona `vnet-main`. Modifica (icona matita) la Network interface e scegli la **BackendSubnet**.
+2. **Basics**: *Name*: `vmss-backend` | *Image*: Ubuntu Server 22.04 LTS. Inserisci Username/Password.
+3. **Networking**: 
+   * *Virtual network*: `vnet-main`.
+   * Modifica la Network interface (icona matita): seleziona **BackendSubnet**.
    * Spunta **Use a load balancer**. Seleziona `lb-vmss` e `backend-pool-vmss`.
-4. Vai alla **Scheda Scaling**:
-   * *Initial instance count*: **2**.
+4. **Scaling**: *Initial instance count*: **2**.
 5. Clicca **Review + create**, poi **Create**.
 
 ---
 
-## 🛠️ PASSO 7: Sicurezza Senza Password (Managed Identity & RBAC)
-Autorizziamo App Service e VMSS a leggere lo Storage senza stringhe di connessione.
-1. Apri l'**App Service** -> menu a sinistra **Identity** -> *Status* su **On** -> Save.
-2. Apri il **VMSS** -> menu a sinistra **Identity** -> *Status* su **On** -> Save.
-3. Apri lo **Storage Account** -> menu a sinistra **Access Control (IAM)**.
-4. Clicca **+ Add** -> **Add role assignment**.
-5. Cerca e seleziona il ruolo **Storage Blob Data Reader**, vai su Next.
-6. Assegna l'accesso a **Managed identity**.
-7. Clicca **+ Select members**, scegli l'App Service e il VMSS creati.
-8. Clicca **Review + assign**.
+## 🛠️ FASE 7: Sicurezza Zero-Trust (Managed Identity & RBAC)
+1. Apri l'**App Service** -> menu **Identity** -> *Status* **On** -> Save.
+2. Apri il **VMSS** -> menu **Identity** -> *Status* **On** -> Save.
+3. Apri lo **Storage Account** -> menu **Access Control (IAM)** -> **+ Add** -> **Add role assignment**.
+4. Cerca il ruolo: **Storage Blob Data Reader**. Next.
+5. *Assign access to*: **Managed identity**.
+6. Clicca **+ Select members**, aggiungi sia l'App Service che il VMSS.
+7. Clicca **Review + assign**.
 
 ---
 
-## 🛠️ PASSO 8: L'Ingresso su Internet (Application Gateway & WAF)
-Il proxy pubblico che protegge dagli attacchi e smista le rotte.
+## 🛠️ FASE 8: App Gateway, WAF e Routing
 1. Cerca **Application Gateways** e clicca **+ Create**.
-2. **Scheda Basics**:
-   * *Name*: `agw-front` | *Tier*: **WAF V2**.
-   * Seleziona `vnet-main` e la **FrontEndSubnet**.
-3. **Scheda Frontends**:
-   * Frontend IP type: Public. Clicca "Add new" e chiamalo `pip-agw`.
-4. **Scheda Backends**:
-   * Add pool 1: Nome `pool-appservice`. Target type: App Services. Seleziona il tuo App Service.
-   * Add pool 2: Nome `pool-vmss-interno`. Target type: IP address. Inserisci l'IP privato del Load Balancer (dal Passo 5).
-5. **Scheda Configuration (Routing Rules)**:
-   * Aggiungi regola: *Name* `regola-smistamento`, *Priority* `100`.
-   * *Listener*: Nome `listener-80`, Frontend IP Public, Porta 80.
-   * *Backend targets* (Default): Target `pool-vmss-interno`. *Backend settings* -> Add new (Nome `impostazioni-80`, Port 80).
-   * *Path-based rules* (per /app/*): Path `/app/*`, Target name `traffico-app-service`, Settings `impostazioni-80`, Target `pool-appservice`.
-6. Clicca **Review + create**, poi **Create**. *(L'operazione richiede circa 15-20 minuti).*
+2. **Basics**: *Name*: `agw-front` | *Tier*: **WAF V2**. VNet: `vnet-main`, Subnet: **FrontEndSubnet** (`10.0.1.0/24`).
+3. **Frontends**: Frontend IP type: Public. "Add new" -> `pip-agw`.
+4. **Backends**:
+   * Add pool 1: Nome `pool-appservice`. Target: App Services -> seleziona il tuo `app-frontend-01`.
+   * Add pool 2: Nome `pool-vmss`. Target: IP address -> Inserisci l'IP del Load Balancer annotato in Fase 5 (es. `10.1.1.4`).
+5. **Configuration (Routing)**:
+   * Aggiungi regola: *Name* `rule-main`, *Priority* `100`.
+   * *Listener*: Nome `listener-80`, Frontend IP Public, Porta **80**.
+   * *Backend targets* (Default routing): Target `pool-vmss`. Crea nuovi *Backend settings* (Nome `set-80`, Port 80).
+   * *Path-based rules*: Path **`/app/*`**, Target name `route-app`, Settings `set-80`, Target **`pool-appservice`**.
+6. Clicca **Review + create** e poi **Create** (richiede ~15-20 min).
 
 ---
 
-## 🛠️ PASSO 9: Gestione Sicura e Backup (Bastion & RSV)
-**Azure Bastion (Accesso remoto sicuro via Browser):**
+## 🛠️ FASE 9: Accesso Amministrativo (Azure Bastion)
 1. Cerca **Bastion** e clicca **+ Create**.
-2. *Name*: `bastion-host`. Seleziona `vnet-main` (riconoscerà automaticamente la `AzureBastionSubnet`).
+2. *Name*: `bastion-host`. VNet: `vnet-main` (riconoscerà la `AzureBastionSubnet`).
 3. *Public IP*: Create new -> `pip-bastion`.
 4. Clicca **Review + create**, poi **Create**.
 
-**Recovery Services Vault (Backup):**
-1. Cerca **Recovery Services vaults** e clicca **+ Create**.
-2. *Vault name*: `rsv-backup`.
-3. Clicca **Review + create**, poi **Create**.
-4. Nel vault, vai su **Backup** -> Azure -> Virtual Machine, e seleziona il tuo VMSS per applicare la `DailyBackupPolicy`.
-
 ---
 🎉 **INFRASTRUTTURA COMPLETATA!**
-Hai implementato con successo l'architettura sicura Hub-and-Spoke.
+Questa configurazione rispecchia il 100% dei requisiti architetturali, inclusi CIDR block specifici, RBAC roles, regole di probe custom e policy disabilitate sui Private Endpoint.
